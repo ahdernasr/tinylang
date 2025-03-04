@@ -84,6 +84,10 @@ public:
     size_t instruction_count() const;
     double execution_time() const;
     
+private:
+    size_t instruction_count_;
+    std::chrono::high_resolution_clock::time_point execution_start_time_;
+    
     // Debugging
     void print_stack_trace() const;
     void print_globals() const;

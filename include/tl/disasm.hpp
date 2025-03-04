@@ -13,11 +13,11 @@ private:
     std::ostream& output_;
     
     // Disassembly helpers
-    void disassemble_instruction(size_t offset);
-    void print_instruction(const std::string& name, size_t offset);
-    void print_constant_instruction(const std::string& name, size_t offset);
-    void print_byte_instruction(const std::string& name, size_t offset);
-    void print_jump_instruction(const std::string& name, int sign, size_t offset);
+    size_t disassemble_instruction(size_t offset);
+    size_t print_instruction(const std::string& name, size_t offset);
+    size_t print_constant_instruction(const std::string& name, size_t offset);
+    size_t print_byte_instruction(const std::string& name, size_t offset);
+    size_t print_jump_instruction(const std::string& name, int sign, size_t offset);
     
     // Formatting helpers
     std::string format_constant(const Value& value) const;
