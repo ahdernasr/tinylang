@@ -61,7 +61,7 @@ private:
     void emit_opcode(OpCode opcode);
     void emit_operand(uint16_t operand);
     void emit_constant(Value value);
-    void emit_jump(OpCode opcode);
+    int emit_jump(OpCode opcode);
     void emit_loop(int loop_start);
     void patch_jump(int offset);
     
