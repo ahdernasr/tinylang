@@ -1,0 +1,12 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+
+# Find dependencies
+find_dependency(Threads)
+
+# Include the target file
+include("${CMAKE_CURRENT_LIST_DIR}/tinylangTargets.cmake")
+
+# Check that all required components are available
+check_required_components(tinylang)
