@@ -1,77 +1,53 @@
 #include "tl/ast.hpp"
-#include "tl/compiler.hpp"
+#include "tl/vm.hpp"
 
 namespace tl {
 
-// Expression node implementations
-void LiteralExpr::accept(AstVisitor& visitor) {
-    visitor.visit_literal(*this);
-}
+LiteralExpr::LiteralExpr(Value value) : value(std::move(value)) {}
+Value LiteralExpr::accept(ExprVisitor& visitor) { return visitor.visit_literal_expr(*this); }
 
-void VariableExpr::accept(AstVisitor& visitor) {
-    visitor.visit_variable(*this);
-}
+VariableExpr::VariableExpr(std::string name) : name(std::move(name)) {}
+Value VariableExpr::accept(ExprVisitor& visitor) { return visitor.visit_variable_expr(*this); }
 
-void UnaryExpr::accept(AstVisitor& visitor) {
-    visitor.visit_unary(*this);
-}
+UnaryExpr::UnaryExpr(Token op, std::unique_ptr<Expr> right)
+    : op(std::move(op)), right(std::move(right)) {}
+Value UnaryExpr::accept(ExprVisitor& visitor) { return visitor.visit_unary_expr(*this); }
 
-void BinaryExpr::accept(AstVisitor& visitor) {
-    visitor.visit_binary(*this);
-}
+BinaryExpr::BinaryExpr(std::unique_ptr<Expr> left, Token op, std::unique_ptr<Expr> right)
+    : left(std::move(left)), op(std::move(op)), right(std::move(right)) {}
+Value BinaryExpr::accept(ExprVisitor& visitor) { return visitor.visit_binary_expr(*this); }
 
-void CallExpr::accept(AstVisitor& visitor) {
-    visitor.visit_call(*this);
-}
+AssignExpr::AssignExpr(std::string name, std::unique_ptr<Expr> value)
+    : name(std::move(name)), value(std::move(value)) {}
+Value AssignExpr::accept(ExprVisitor& visitor) { return visitor.visit_assign_expr(*this); }
 
-void AssignExpr::accept(AstVisitor& visitor) {
-    visitor.visit_assign(*this);
-}
+ExpressionStmt::ExpressionStmt(std::unique_ptr<Expr> expression)
+    : expression(std::move(expression)) {}
+void ExpressionStmt::accept(StmtVisitor& visitor) { visitor.visit_expression_stmt(*this); }
 
-// Statement node implementations
-void ExprStmt::accept(AstVisitor& visitor) {
-    visitor.visit_expr_stmt(*this);
-}
+PrintStmt::PrintStmt(std::unique_ptr<Expr> expression)
+    : expression(std::move(expression)) {}
+void PrintStmt::accept(StmtVisitor& visitor) { visitor.visit_print_stmt(*this); }
 
-void VarStmt::accept(AstVisitor& visitor) {
-    visitor.visit_var_stmt(*this);
-}
+LetStmt::LetStmt(std::string name, std::unique_ptr<Expr> initializer)
+    : name(std::move(name)), initializer(std::move(initializer)) {}
+void LetStmt::accept(StmtVisitor& visitor) { visitor.visit_let_stmt(*this); }
 
-void BlockStmt::accept(AstVisitor& visitor) {
-    visitor.visit_block_stmt(*this);
-}
+BlockStmt::BlockStmt(std::vector<std::unique_ptr<Stmt>> statements)
+    : statements(std::move(statements)) {}
+void BlockStmt::accept(StmtVisitor& visitor) { visitor.visit_block_stmt(*this); }
 
-void IfStmt::accept(AstVisitor& visitor) {
-    visitor.visit_if_stmt(*this);
-}
+IfStmt::IfStmt(std::unique_ptr<Expr> condition,
+               std::unique_ptr<Stmt> then_branch,
+               std::unique_ptr<Stmt> else_branch)
+    : condition(std::move(condition)),
+      then_branch(std::move(then_branch)),
+      else_branch(std::move(else_branch)) {}
+void IfStmt::accept(StmtVisitor& visitor) { visitor.visit_if_stmt(*this); }
 
-void WhileStmt::accept(AstVisitor& visitor) {
-    visitor.visit_while_stmt(*this);
-}
-
-void ForStmt::accept(AstVisitor& visitor) {
-    visitor.visit_for_stmt(*this);
-}
-
-void BreakStmt::accept(AstVisitor& visitor) {
-    visitor.visit_break_stmt(*this);
-}
-
-void ContinueStmt::accept(AstVisitor& visitor) {
-    visitor.visit_continue_stmt(*this);
-}
-
-void ReturnStmt::accept(AstVisitor& visitor) {
-    visitor.visit_return_stmt(*this);
-}
-
-void FunctionStmt::accept(AstVisitor& visitor) {
-    visitor.visit_function_stmt(*this);
-}
-
-// Program node implementation
-void Program::accept(AstVisitor& visitor) {
-    visitor.visit_program(*this);
-}
+WhileStmt::WhileStmt(std::unique_ptr<Expr> condition, std::unique_ptr<Stmt> body)
+    : condition(std::move(condition)), body(std::move(body)) {}
+void WhileStmt::accept(StmtVisitor& visitor) { visitor.visit_while_stmt(*this); }
 
 } // namespace tl
+

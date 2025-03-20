@@ -1,97 +1,14 @@
 #pragma once
 
+#include "ast.hpp"
+#include "parser.hpp"
 #include "value.hpp"
-#include "bytecode.hpp"
-#include "table.hpp"
-#include "gc.hpp"
-#include "string.hpp"
+
+#include <string>
+#include <unordered_map>
 #include <vector>
-#include <memory>
-#include <chrono>
 
 namespace tl {
-
-class VM {
-private:
-    std::vector<Value> stack_;
-    std::vector<CallFrame> frames_;
-    std::vector<Value> globals_;
-    Table global_table_;
-    StringInterner string_interner_;
-    GarbageCollector gc_;
-    
-    // Built-in functions
-    void init_builtins();
-    void define_builtin(const std::string& name, Value value);
-    
-    // Stack operations
-    void push(const Value& value);
-    Value pop();
-    Value peek(int distance = 0) const;
-    
-    // Call frame operations
-    void call_function(std::shared_ptr<Closure> closure, int arg_count);
-    void call_value(const Value& callee, int arg_count);
-    
-    // Upvalue operations
-    Value capture_upvalue(Value* local);
-    void close_upvalues(Value* last);
-    
-    // Runtime operations
-    bool is_falsy(const Value& value) const;
-    bool values_equal(const Value& a, const Value& b) const;
-    bool values_less(const Value& a, const Value& b) const;
-    
-    // Error handling
-    void runtime_error(const std::string& message);
-    void runtime_error(const std::string& message, const std::string& operand);
-    
-    // Instruction execution
-    bool run();
-    bool execute_instruction(OpCode instruction);
-    
-    // Built-in function implementations
-    Value builtin_print(const std::vector<Value>& args);
-    Value builtin_clock(const std::vector<Value>& args);
-    Value builtin_len(const std::vector<Value>& args);
-    Value builtin_assert(const std::vector<Value>& args);
-    Value builtin_to_number(const std::vector<Value>& args);
-    Value builtin_to_string(const std::vector<Value>& args);
-    Value builtin_range(const std::vector<Value>& args);
-
-public:
-    VM();
-    ~VM() = default;
-    
-    // VM operations
-    InterpretResult interpret(const std::string& source);
-    InterpretResult interpret_file(const std::string& filename);
-    
-    // Stack inspection
-    const std::vector<Value>& stack() const { return stack_; }
-    size_t stack_size() const { return stack_.size(); }
-    
-    // Global variables
-    void define_global(const std::string& name, const Value& value);
-    bool get_global(const std::string& name, Value& value) const;
-    void set_global(const std::string& name, const Value& value);
-    
-    // Garbage collection
-    void collect_garbage() { gc_.collect(); }
-    size_t memory_usage() const { return gc_.bytes_allocated(); }
-    
-    // Statistics
-    size_t instruction_count() const;
-    double execution_time() const;
-    
-private:
-    size_t instruction_count_;
-    std::chrono::high_resolution_clock::time_point execution_start_time_;
-    
-    // Debugging
-    void print_stack_trace() const;
-    void print_globals() const;
-};
 
 enum class InterpretResult {
     OK,
@@ -99,4 +16,46 @@ enum class InterpretResult {
     RUNTIME_ERROR
 };
 
+class RuntimeError : public std::runtime_error {
+public:
+    explicit RuntimeError(const std::string& message)
+        : std::runtime_error(message) {}
+};
+
+class VM : public ExprVisitor, public StmtVisitor {
+public:
+    VM();
+
+    InterpretResult interpret(const std::string& source);
+
+    // ExprVisitor implementation
+    Value visit_literal_expr(LiteralExpr& expr) override;
+    Value visit_variable_expr(VariableExpr& expr) override;
+    Value visit_unary_expr(UnaryExpr& expr) override;
+    Value visit_binary_expr(BinaryExpr& expr) override;
+    Value visit_assign_expr(AssignExpr& expr) override;
+
+    // StmtVisitor implementation
+    void visit_expression_stmt(ExpressionStmt& stmt) override;
+    void visit_print_stmt(PrintStmt& stmt) override;
+    void visit_let_stmt(LetStmt& stmt) override;
+    void visit_block_stmt(BlockStmt& stmt) override;
+    void visit_if_stmt(IfStmt& stmt) override;
+    void visit_while_stmt(WhileStmt& stmt) override;
+
+private:
+    std::unordered_map<std::string, Value> globals_;
+    std::vector<std::unordered_map<std::string, Value>> scopes_;
+
+    void execute(const std::vector<StmtPtr>& statements);
+    void execute_block(const std::vector<StmtPtr>& statements);
+
+    void define(const std::string& name, const Value& value);
+    void assign(const std::string& name, const Value& value);
+    Value evaluate(Expr& expr);
+
+    std::unordered_map<std::string, Value>& current_scope();
+};
+
 } // namespace tl
+

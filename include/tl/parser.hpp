@@ -1,67 +1,62 @@
 #pragma once
 
 #include "ast.hpp"
+#include "lexer.hpp"
 #include "token.hpp"
-#include "error.hpp"
+
+#include <stdexcept>
 #include <vector>
-#include <memory>
 
 namespace tl {
 
+class ParseError : public std::runtime_error {
+public:
+    explicit ParseError(const std::string& message)
+        : std::runtime_error(message) {}
+};
+
 class Parser {
+public:
+    explicit Parser(std::vector<Token> tokens);
+
+    std::vector<StmtPtr> parse();
+
 private:
     std::vector<Token> tokens_;
     std::size_t current_;
-    ErrorReporter& error_reporter_;
 
-public:
-    Parser(const std::vector<Token>& tokens, ErrorReporter& error_reporter);
-    
-    std::unique_ptr<Program> parse();
-    
-private:
-    // Parsing methods
-    std::unique_ptr<Stmt> declaration();
-    std::unique_ptr<Stmt> statement();
-    std::unique_ptr<Stmt> var_declaration();
-    std::unique_ptr<Stmt> function_declaration();
-    std::unique_ptr<Stmt> if_statement();
-    std::unique_ptr<Stmt> while_statement();
-    std::unique_ptr<Stmt> for_statement();
-    std::unique_ptr<Stmt> break_statement();
-    std::unique_ptr<Stmt> continue_statement();
-    std::unique_ptr<Stmt> return_statement();
-    std::unique_ptr<Stmt> block_statement();
-    std::unique_ptr<Stmt> expression_statement();
-    
-    std::unique_ptr<Expr> expression();
-    std::unique_ptr<Expr> assignment();
-    std::unique_ptr<Expr> logic_or();
-    std::unique_ptr<Expr> logic_and();
-    std::unique_ptr<Expr> equality();
-    std::unique_ptr<Expr> comparison();
-    std::unique_ptr<Expr> term();
-    std::unique_ptr<Expr> factor();
-    std::unique_ptr<Expr> unary();
-    std::unique_ptr<Expr> call();
-    std::unique_ptr<Expr> finish_call(std::unique_ptr<Expr> callee);
-    std::unique_ptr<Expr> primary();
-    
-    // Utility methods
+    const Token& peek() const;
+    const Token& previous() const;
     bool is_at_end() const;
-    Token advance();
-    Token peek() const;
-    Token previous() const;
+
+    const Token& advance();
     bool check(TokenType type) const;
-    bool match(TokenType type);
-    bool match_any(const std::vector<TokenType>& types);
-    
-    Token consume(TokenType type, const std::string& message);
+    bool match(std::initializer_list<TokenType> types);
+    const Token& consume(TokenType type, const std::string& message);
+
+    // Grammar rules
+    StmtPtr declaration();
+    StmtPtr let_declaration();
+    StmtPtr statement();
+    StmtPtr print_statement();
+    StmtPtr expression_statement();
+    StmtPtr block_statement();
+    StmtPtr if_statement();
+    StmtPtr while_statement();
+
+    ExprPtr expression();
+    ExprPtr assignment();
+    ExprPtr or_expression();
+    ExprPtr and_expression();
+    ExprPtr equality();
+    ExprPtr comparison();
+    ExprPtr term();
+    ExprPtr factor();
+    ExprPtr unary();
+    ExprPtr primary();
+
     void synchronize();
-    
-    // Error handling
-    void error(const Token& token, const std::string& message);
-    void error_at_current(const std::string& message);
 };
 
 } // namespace tl
+
